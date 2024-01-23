@@ -14,7 +14,7 @@ Your task is to fix the underlying code to make the failing tests in the app pas
 
 <img width="404" alt="image" src="https://github.com/ProlificLabs/shakesearch/assets/98766735/9a5b96b5-0e44-42e1-8d6e-b7a9e08df9a1">
 
-*** 
+---
 
 **Do not open a pull request or fork the repo**. Use these steps to create a hard copy.
 
@@ -24,7 +24,6 @@ Your task is to fix the underlying code to make the failing tests in the app pas
 4. Email us back with a link to your copy of the repo
 
 ## Running the App Locally
-
 
 This command runs the app on your machine and will be available in browser at localhost:3001.
 
@@ -45,3 +44,11 @@ make test
 ```
 
 Good luck!
+
+## Changelog
+
+- Used regex to query without case sensitivity
+- Added a page querystring, so that not every item is loaded in a single request
+- Modified the client side to use the page querystring
+- Added an onClick handler for the load more button to fetch the next page and append the results to the table
+- Searching a new query will reset the page and contents of the page with the new data

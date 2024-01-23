@@ -7,9 +7,14 @@ import (
 	"index/suffixarray"
 	"io/ioutil"
 	"log"
+	"math"
 	"net/http"
 	"os"
+	"regexp"
+	"strconv"
 )
+
+const LIMIT = 20
 
 func main() {
 	searcher := Searcher{}
@@ -48,7 +53,17 @@ func handleSearch(searcher Searcher) func(w http.ResponseWriter, r *http.Request
 			w.Write([]byte("missing search query in URL params"))
 			return
 		}
-		results := searcher.Search(query[0])
+		pageq, _ := r.URL.Query()["page"]
+		page := 1
+		if len(pageq) > 0 {
+			page, err := strconv.Atoi(pageq[0])
+			if err != nil || page < 1 {
+				w.WriteHeader(http.StatusBadRequest)
+				w.Write([]byte("invalid page query in URL params"))
+				return
+			}
+		}
+		results := searcher.Search(query[0], page)
 		buf := &bytes.Buffer{}
 		enc := json.NewEncoder(buf)
 		err := enc.Encode(results)
@@ -72,11 +87,27 @@ func (s *Searcher) Load(filename string) error {
 	return nil
 }
 
-func (s *Searcher) Search(query string) []string {
-	idxs := s.SuffixArray.Lookup([]byte(query), -1)
-	results := []string{}
+func (s *Searcher) Search(query string, page int) []string {
+	re := regexp.MustCompile("(?i)" + query)
+	idxs := s.SuffixArray.FindAllIndex(re, -1)
+	resultsmap := map[string]bool{}
 	for _, idx := range idxs {
-		results = append(results, s.CompleteWorks[idx-250:idx+250])
+		for _, i := range idx {
+			resultsmap[s.CompleteWorks[i-250:i+250]] = true
+		}
 	}
-	return results
+
+	results := []string{}
+	for k := range resultsmap {
+		results = append(results, k)
+	}
+
+	lo := (page - 1) * LIMIT
+	hi := math.Min(float64(len(results)), float64((page-1)*LIMIT+LIMIT))
+
+	if lo > len(results) {
+		return []string{}
+	}
+
+	return results[lo:int(hi)]
 }
